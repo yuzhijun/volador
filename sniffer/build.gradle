@@ -1,0 +1,41 @@
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+buildscript {
+    repositories {
+        mavenLocal()
+        jcenter()
+    }
+}
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation gradleApi()//gradle sdk
+    implementation localGroovy()//groovy sdk
+    compile 'com.android.tools.build:transform-api:2.0.0-deprecated-use-gradle-api'
+    compile 'com.android.tools.build:gradle:3.3.2'
+    compile 'org.ow2.asm:asm:6.0'
+    compile 'org.ow2.asm:asm-commons:6.0'
+    compile 'javassist:javassist:3.12.1.GA'
+}
+
+// 本地调试
+def groupId = 'volador.sniffer'
+version = '1.0.6'
+def artifactId = 'sniffer-gradle-plugin'
+
+// 上传本地maven库
+uploadArchives {
+    version = version + '-SNAPSHOT'
+    repositories {
+        mavenDeployer {
+            snapshotRepository(url: uri('../snapshotRepo'))
+            pom.groupId = groupId
+            pom.artifactId = artifactId
+            pom.version = version
+        }
+    }
+}
+
+targetCompatibility = JavaVersion.VERSION_1_7
+sourceCompatibility = JavaVersion.VERSION_1_7

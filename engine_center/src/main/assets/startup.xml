@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<startup>
+    <page id="MainActivity" tag="1"><!--1代表要计算application到这个页面启动完成时间-->
+        <api id="/api/config"/>
+        <api id="/api/list"/>
+    </page>
+    <page id="######" tag="0">
+        <api id="/api/test1"/>
+    </page>
+</startup>

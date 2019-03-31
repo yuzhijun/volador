@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">engine_center</string>
+
+    <item name="auto_track_tag_view_value" type="id" />
+    <item name="auto_track_tag_view_id" type="id" />
+    <item name="auto_track_tag_view_ignored" type="id" />
+    <item name="auto_track_tag_view_properties" type="id" />
+    <item name="auto_track_tag_view_onclick_timestamp" type="id" />
+    <item name="auto_track_tag_view_fragment_name" type="id" />
+    <item name="auto_track_tag_view_activity" type="id" />
+</resources>

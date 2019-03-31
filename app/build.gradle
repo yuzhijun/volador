@@ -1,0 +1,42 @@
+apply plugin: 'com.android.application'
+apply plugin: 'volador.sniffer'
+
+sniffer {
+    // 是否打印日志,可选,默认false
+    isDebug = true
+    // 是否打开SDK的日志全埋点采集,可选,默认true
+    isOpenLogTrack = true
+    // 因为默认系统包[android.support, androidx]是被过滤掉的,想对默认过滤掉的类插桩的话可以手动添加包名,但是不建议对系统类进行插桩,容易出现不可预期错误,可选,默认空
+    include = ["android.support.v7.widget"]
+    // [android.support, androidx]默认过滤，可手动追加过滤的包,可选,默认空不追加
+    exclude = []
+}
+
+android {
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "com.bilibili.volador"
+        minSdkVersion 15
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation project(':engine_center')
+    implementation 'com.android.support:design:28.0.0'
+}
+repositories {
+    mavenCentral()
+}

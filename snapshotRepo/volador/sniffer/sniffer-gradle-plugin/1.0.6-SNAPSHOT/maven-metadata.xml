@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>volador.sniffer</groupId>
+  <artifactId>sniffer-gradle-plugin</artifactId>
+  <version>1.0.6-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <timestamp>20190328.100029</timestamp>
+      <buildNumber>31</buildNumber>
+    </snapshot>
+    <lastUpdated>20190328100029</lastUpdated>
+  </versioning>
+</metadata>
