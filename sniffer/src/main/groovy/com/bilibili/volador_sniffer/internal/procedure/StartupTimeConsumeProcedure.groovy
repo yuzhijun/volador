@@ -3,6 +3,7 @@ package com.bilibili.volador_sniffer.internal.procedure
 import com.android.SdkConstants
 import com.android.build.api.transform.*
 import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.TaskManager
 import com.android.utils.FileUtils
 import com.bilibili.volador_sniffer.internal.javaassit.Injector.IClassInjector
@@ -16,7 +17,6 @@ import javassist.CtClass
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.IOUtils
 import org.gradle.api.Project
-import com.android.build.gradle.BasePlugin
 
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
@@ -85,9 +85,7 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
                 /* 初始化 ClassPool */
                 Object pool = initClassPool(inputs)
                 Logger.info("||-->初始化classpool结束")
-                Injectors.values().each {
-                    doInject(inputs, pool, it.injector, outputProvider, context)
-                }
+                doInject(inputs, pool, outputProvider, context)
 //                return null
 //            }
 //        })
@@ -97,11 +95,11 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
      * 执行注入操作
      */
     static def doInject(Collection<TransformInput> inputs, ClassPool pool,
-                        IClassInjector injector, TransformOutputProvider outputProvider, Context context) {
+                         TransformOutputProvider outputProvider, Context context) {
         try {
             inputs.each { TransformInput input ->
-                input.directoryInputs.each {
-                    handleDir(pool, it, injector, outputProvider, context)
+                input.directoryInputs.each { DirectoryInput dirInput ->
+                        handleDir(pool, dirInput, outputProvider, context)
                 }
                 input.jarInputs.each { JarInput jarInput ->
                     String destName = jarInput.file.name
@@ -112,11 +110,16 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
                     }
                     /** 获得输出文件*/
                     File dest = outputProvider.getContentLocation(destName + "_" + hexName, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-                    File modifiedJar = handleJar(pool, jarInput, injector, outputProvider, context)
-                    if (modifiedJar == null) {
-                        modifiedJar = jarInput.file
+                    File modifiedJar = null
+                    File inputFile = null
+                    Injectors.values().each {
+                        inputFile = modifiedJar == null ? jarInput.file : modifiedJar
+                        modifiedJar = handleJar(pool, inputFile, it.injector, outputProvider, context)
+                        if (modifiedJar == null) {
+                            modifiedJar = jarInput.file
+                        }
                     }
-                    Logger.info("||-->处理完要拷贝的jar: ${modifiedJar.name}")
+                    Logger.info("||-->处理完要拷贝的jar${modifiedJar.absolutePath}: ${modifiedJar.name}")
                     FileUtils.copyFile(modifiedJar, dest)
                 }
             }
@@ -143,10 +146,10 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
     /**
      * 处理 jar
      */
-    static def handleJar(ClassPool pool, JarInput input, IClassInjector injector, TransformOutputProvider outputProvider, Context context) {
-        JarFile jar = new JarFile(input.file)
-        def hexName = DigestUtils.md5Hex(input.file.absolutePath).substring(0, 8)
-        def outputJar = new File(context.temporaryDir, hexName + input.file.name)
+    static def handleJar(ClassPool pool, File jarFile, IClassInjector injector, TransformOutputProvider outputProvider, Context context) {
+        JarFile jar = new JarFile(jarFile)
+        def hexName = DigestUtils.md5Hex(jarFile.absolutePath).substring(0, 8)
+        def outputJar = new File(context.temporaryDir, hexName + jarFile.name)
         Logger.info("||-->jar包中的文件: ${outputJar.absolutePath}")
         JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(outputJar))
         Enumeration<JarEntry> jarEntries = jar.entries()
@@ -190,8 +193,7 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
     /**
      * 处理目录中的 class 文件
      */
-    static def handleDir(ClassPool pool, DirectoryInput input, IClassInjector injector, TransformOutputProvider outputProvider, Context context) {
-        File modified = null
+    static def handleDir(ClassPool pool, DirectoryInput input, TransformOutputProvider outputProvider, Context context) {
         FileOutputStream outputStream = null
         CtClass ctCls = null
         File dest = outputProvider.getContentLocation(input.name, input.contentTypes, input.scopes, Format.DIRECTORY)
@@ -200,40 +202,43 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
             if (dir){
                 dir.traverse (type: FileType.FILES, nameFilter: ~/.*\.class/){
                     File classFile ->
-                        try{
-                            String className = AutoTextUtil.path2ClassName(classFile.absolutePath.replace(dir.absolutePath + File.separator, ""))
-                            ctCls = injector.injectClass(pool, className, outputProvider, context)
-                            if (ctCls == null){
-
-                            }else{
-                                modified = new File(context.temporaryDir, className.replace('.', '') + '.class')
-                                if (modified.exists()) {
-                                    modified.delete()
+                        File modified = null
+                        Injectors.values().each {//由於inject只会操作不同的文件,所以这里不会出现操作被覆盖问题
+                            try{
+                                String className = AutoTextUtil.path2ClassName(classFile.absolutePath.replace(dir.absolutePath + File.separator, ""))
+                                ctCls = it.injector.injectClass(pool, className, outputProvider, context)
+                                if (ctCls == null){
+                                    //do nothing
+                                }else{
+                                    modified = new File(context.temporaryDir, className.replace('.', '') + '.class')
+                                    if (modified.exists()) {
+                                        modified.delete()
+                                    }
+                                    modified.createNewFile()
+                                    outputStream = new FileOutputStream(modified)
+                                    outputStream.write(ctCls.toBytecode())
                                 }
-                                modified.createNewFile()
-                                outputStream = new FileOutputStream(modified)
-                                outputStream.write(ctCls.toBytecode())
-                            }
-                        }catch(Exception e){
-                            e.printStackTrace()
-                        }finally{
-                            try {
-                                if (outputStream != null) {
-                                    outputStream.close()
-                                }
-                            } catch (Exception e) {
+                            }catch(Exception e){
                                 e.printStackTrace()
+                            }finally{
+                                try {
+                                    if (outputStream != null) {
+                                        outputStream.close()
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace()
+                                }
                             }
-                        }
 
-                        if (ctCls != null){
-                            String fullClassName = classFile.absolutePath.replace(dir.absolutePath, "")
-                            File target = new File(dest.absolutePath + fullClassName)
-                            if (target.exists()) {
-                                target.delete()
-                            }
-                            if(modified != null){
-                                FileUtils.copyFile(modified, target)
+                            if (ctCls != null){
+                                String fullClassName = classFile.absolutePath.replace(dir.absolutePath, "")
+                                File target = new File(dest.absolutePath + fullClassName)
+                                if (target.exists()) {
+                                    target.delete()
+                                }
+                                if(modified != null){
+                                    FileUtils.copyFile(modified, target)
+                                }
                             }
                         }
                 }
