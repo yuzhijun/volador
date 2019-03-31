@@ -3,6 +3,7 @@ package com.bilibili.volador_sniffer.internal.javaassit.Injector
 import com.android.build.api.transform.Context
 import com.android.build.api.transform.TransformOutputProvider
 import javassist.ClassPool
+import javassist.CtClass
 import org.gradle.api.Project
 
 interface IClassInjector {
@@ -26,9 +27,9 @@ interface IClassInjector {
     /**
      * 对 dir 目录中的 Class 进行注入
      */
-    def injectClass(ClassPool pool, String dir, TransformOutputProvider outputProvider, Context context)
+    CtClass injectClass(ClassPool pool, String dir, TransformOutputProvider outputProvider, Context context)
     /**
      * 对 jar文件进行class注入
      * */
-    def injectJar(ClassPool pool, String dir, TransformOutputProvider outputProvider, Context context )
+    CtClass injectJar(ClassPool pool, String dir, TransformOutputProvider outputProvider, Context context )
 }

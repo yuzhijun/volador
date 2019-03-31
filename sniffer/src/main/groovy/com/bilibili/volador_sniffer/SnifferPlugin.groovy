@@ -13,7 +13,7 @@ class SnifferPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.extensions.create("sniffer", SnifferExtension)
 
-        Logger.setDebug(project.sniffer.isDebug)
+        Logger.setDebug(true)
 
         if (project.plugins.hasPlugin(AppPlugin)){
             //build time trace

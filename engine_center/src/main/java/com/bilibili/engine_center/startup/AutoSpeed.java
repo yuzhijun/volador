@@ -41,7 +41,7 @@ public class AutoSpeed {
     }
 
 
-    public void init(Context context, long coldStartTime){
+    public void init(Context context, int coldStartTime){
         this.application = context.getApplicationContext();
         if (this.coldStartTime < 0){
             this.coldStartTime = coldStartTime;

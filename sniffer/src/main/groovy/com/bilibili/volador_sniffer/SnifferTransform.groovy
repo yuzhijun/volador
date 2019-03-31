@@ -6,11 +6,11 @@ import com.android.build.api.transform.TransformException
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.bilibili.volador_sniffer.internal.cache.GlobalConfig
-import com.bilibili.volador_sniffer.internal.procedure.AutoSnifferEventProcedure
 import com.bilibili.volador_sniffer.internal.procedure.AutoSnifferEventUpdateProcedure
 import com.bilibili.volador_sniffer.internal.procedure.SnifferOnFinishedProcedure
 import com.bilibili.volador_sniffer.internal.procedure.SnifferProcedure
 import com.bilibili.volador_sniffer.internal.procedure.StartupTimeConsumeProcedure
+import com.bilibili.volador_sniffer.internal.util.Logger
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.Project
 
@@ -37,16 +37,17 @@ class SnifferTransform extends Transform{
     @Override
     boolean isIncremental() {
         //是否支持增量编译
-        return true
+        return false
     }
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
+        Logger.info("||-->开始插件处理")
         Project project = GlobalConfig.project
 
         if(transformInvocation.isIncremental() && isIncremental()){
             snifferProcedure.with(new AutoSnifferEventUpdateProcedure(project, transformInvocation))
         }else {
-            snifferProcedure.with(new AutoSnifferEventProcedure(project, transformInvocation))
+//            snifferProcedure.with(new AutoSnifferEventProcedure(project, transformInvocation))
             snifferProcedure.with(new StartupTimeConsumeProcedure(project, transformInvocation))
         }
 

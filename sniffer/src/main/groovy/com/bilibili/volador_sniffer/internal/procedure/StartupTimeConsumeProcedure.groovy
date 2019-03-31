@@ -2,12 +2,13 @@ package com.bilibili.volador_sniffer.internal.procedure
 
 import com.android.SdkConstants
 import com.android.build.api.transform.*
+import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.internal.TaskManager
 import com.android.utils.FileUtils
-import com.bilibili.volador_sniffer.internal.concurrent.BatchTaskScheduler
-import com.bilibili.volador_sniffer.internal.concurrent.ITask
 import com.bilibili.volador_sniffer.internal.javaassit.Injector.IClassInjector
 import com.bilibili.volador_sniffer.internal.javaassit.Injector.Injectors
 import com.bilibili.volador_sniffer.internal.util.AutoTextUtil
+import com.bilibili.volador_sniffer.internal.util.Logger
 import com.bilibili.volador_sniffer.internal.util.StartupUtil
 import groovy.io.FileType
 import javassist.ClassPool
@@ -15,6 +16,7 @@ import javassist.CtClass
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.IOUtils
 import org.gradle.api.Project
+import com.android.build.gradle.BasePlugin
 
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
@@ -22,15 +24,20 @@ import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
 
 class StartupTimeConsumeProcedure extends  AbsProcedure{
-    /* 需要处理的 jar 包 */
-    def includeJars = [] as Set
+    private def globalScope
 
     StartupTimeConsumeProcedure(Project project, TransformInvocation transformInvocation) {
         super(project, transformInvocation)
+        def appPlugin = project.plugins.getPlugin(AppPlugin)
+        // taskManager 在 2.1.3 中为 protected 访问类型的，在之后的版本为 private 访问类型的，
+        // 使用反射访问
+        TaskManager taskManager = BasePlugin.metaClass.getProperty(appPlugin, "taskManager")
+        this.globalScope = taskManager.globalScope
     }
 
     @Override
     boolean doWorkContinuously() {
+        Logger.info("||-->开始处理页面启动时间")
         def injectors = includedInjectors()
         if (injectors.isEmpty()){
             copyResult(transformInvocation.inputs, transformInvocation.outputProvider) // 跳过
@@ -71,19 +78,19 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
      */
     def doTransform(Collection<TransformInput> inputs,
                     TransformOutputProvider outputProvider, Context context) {
-        BatchTaskScheduler taskScheduler = new BatchTaskScheduler()
-        taskScheduler.addTask(new ITask(){
-            @Override
-            Object call() throws Exception {
+//        BatchTaskScheduler taskScheduler = new BatchTaskScheduler()
+//        taskScheduler.addTask(new ITask(){
+//            @Override
+//            Object call() throws Exception {
                 /* 初始化 ClassPool */
                 Object pool = initClassPool(inputs)
-
+                Logger.info("||-->初始化classpool结束")
                 Injectors.values().each {
                     doInject(inputs, pool, it.injector, outputProvider, context)
                 }
-                return null
-            }
-        })
+//                return null
+//            }
+//        })
     }
 
     /**
@@ -105,10 +112,11 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
                     }
                     /** 获得输出文件*/
                     File dest = outputProvider.getContentLocation(destName + "_" + hexName, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-                    File modifiedJar = handleJar(pool, it, injector, outputProvider, context)
+                    File modifiedJar = handleJar(pool, jarInput, injector, outputProvider, context)
                     if (modifiedJar == null) {
                         modifiedJar = jarInput.file
                     }
+                    Logger.info("||-->处理完要拷贝的jar: ${modifiedJar.name}")
                     FileUtils.copyFile(modifiedJar, dest)
                 }
             }
@@ -121,11 +129,12 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
      * 初始化 ClassPool
      */
     def initClassPool(Collection<TransformInput> inputs) {
+        Logger.info("||-->初始化classpool开始")
         def pool = new ClassPool(true)
 
         // 添加编译时需要引用的到类到 ClassPool, 同时记录要修改的 jar 到 includeJars
-        StartupUtil.getClassPaths(project, inputs, includeJars).each {
-            println "    $it"
+        StartupUtil.getClassPaths(project, inputs, globalScope).each {
+            Logger.info("||-->开始添加路径到classpool${it}")
             pool.insertClassPath(it)
         }
         pool
@@ -136,17 +145,13 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
      */
     static def handleJar(ClassPool pool, JarInput input, IClassInjector injector, TransformOutputProvider outputProvider, Context context) {
         JarFile jar = new JarFile(input.file)
-        def hexName = DigestUtils.md5Hex(jar.absolutePath).substring(0, 8)
-        def outputJar = new File(context.getTemporaryDir(), hexName + jar.name)
-
+        def hexName = DigestUtils.md5Hex(input.file.absolutePath).substring(0, 8)
+        def outputJar = new File(context.temporaryDir, hexName + input.file.name)
+        Logger.info("||-->jar包中的文件: ${outputJar.absolutePath}")
         JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(outputJar))
         Enumeration<JarEntry> jarEntries = jar.entries()
         while (jarEntries.hasMoreElements()) {
             JarEntry jarEntry = jarEntries.nextElement()
-
-            if (jarEntry.isDirectory())
-                continue
-
             InputStream inputStream = jar.getInputStream(jarEntry)
             byte[] sourceClassBytes = IOUtils.toByteArray(inputStream)
 
@@ -156,16 +161,18 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
 
             CtClass ctCls = null
             if (entryName.endsWith(SdkConstants.DOT_CLASS)) {
-                String className = entryName.replace('\\', '.').replace(File.separator, '.')
-                className = className.substring(0, className.length() - SdkConstants.DOT_CLASS.length())
+                Logger.info("||-->jar包中的文件: ${entryName}")
+                String className = entryName.replace("/", ".").replace(".class", "")
                 try {
+                    Logger.info("||-->jar包中要处理的文件: ${className}")
                     ctCls= injector.injectJar(pool, className, outputProvider, context)
                 } catch (Exception e) {
                     //ignore.
+                    e.printStackTrace()
                 }
             }
 
-            if ( ctCls == null) {
+            if (ctCls == null) {
                 jarOutputStream.write(sourceClassBytes)
             } else {
                 jarOutputStream.write(ctCls.toBytecode())
@@ -186,8 +193,8 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
     static def handleDir(ClassPool pool, DirectoryInput input, IClassInjector injector, TransformOutputProvider outputProvider, Context context) {
         File modified = null
         FileOutputStream outputStream = null
+        CtClass ctCls = null
         File dest = outputProvider.getContentLocation(input.name, input.contentTypes, input.scopes, Format.DIRECTORY)
-        println ">>> Handle Dir: ${input.file.absolutePath}"
         def dir = input.file
         FileUtils.copyDirectory(dir, dest)
             if (dir){
@@ -195,7 +202,7 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
                     File classFile ->
                         try{
                             String className = AutoTextUtil.path2ClassName(classFile.absolutePath.replace(dir.absolutePath + File.separator, ""))
-                            CtClass ctCls = injector.injectClass(pool, className, outputProvider, context)
+                            ctCls = injector.injectClass(pool, className, outputProvider, context)
                             if (ctCls == null){
 
                             }else{
@@ -215,17 +222,19 @@ class StartupTimeConsumeProcedure extends  AbsProcedure{
                                     outputStream.close()
                                 }
                             } catch (Exception e) {
-                                //ignore
+                                e.printStackTrace()
                             }
                         }
 
-                        String fullClassName =  classFile.absolutePath.replace(dir.absolutePath, "")
-                        File target = new File(dest.absolutePath + fullClassName)
-                        if (target.exists()) {
-                            target.delete()
-                        }
-                        if (modified != null){
-                            FileUtils.copyFile(modified, target)
+                        if (ctCls != null){
+                            String fullClassName = classFile.absolutePath.replace(dir.absolutePath, "")
+                            File target = new File(dest.absolutePath + fullClassName)
+                            if (target.exists()) {
+                                target.delete()
+                            }
+                            if(modified != null){
+                                FileUtils.copyFile(modified, target)
+                            }
                         }
                 }
             }

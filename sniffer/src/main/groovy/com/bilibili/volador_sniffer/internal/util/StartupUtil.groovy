@@ -3,14 +3,19 @@ package com.bilibili.volador_sniffer.internal.util
 import com.android.build.api.transform.DirectoryInput
 import com.android.build.api.transform.JarInput
 import com.android.build.api.transform.TransformInput
+import com.android.build.gradle.internal.scope.GlobalScope
+import com.android.sdklib.IAndroidTarget
 import org.gradle.api.Project
 
 public class StartupUtil {
 
     /** 生成 ClassPool 使用的 ClassPath 集合，同时将要处理的 jar 写入 includeJars */
     def
-    static getClassPaths(Project project ,Collection<TransformInput> inputs) {
+    static getClassPaths(Project project, Collection<TransformInput> inputs, GlobalScope scope) {
         def classpathList = []
+
+        // android.jar
+        classpathList.add(getAndroidJarPath(scope))
 
         // 原始项目中引用的 classpathList
         getProjectClassPath(project, inputs).each {
@@ -38,5 +43,12 @@ public class StartupUtil {
             }
         }
         return classPath
+    }
+
+    /**
+     * 编译环境中 android.jar 的路径
+     */
+    def static getAndroidJarPath(GlobalScope globalScope) {
+        return globalScope.getAndroidBuilder().getTarget().getPath(IAndroidTarget.ANDROID_JAR)
     }
 }
