@@ -15,6 +15,7 @@ class ActivityInjector extends BaseInjector{
     ]
 
     def private static hookSuperActivity = ['android.support.v4.app.FragmentActivity']
+    def private static hookAppCompatActivity = ['android.support.v7.app.AppCompatActivity']
 
     @Override
     CtClass injectClass(ClassPool pool, String dir, TransformOutputProvider outputProvider, Context context) {
@@ -57,6 +58,25 @@ class ActivityInjector extends BaseInjector{
                                 }
                             }
                         })
+                    }
+                }else if(ctCls.name in hookAppCompatActivity){
+                    ctCls.getDeclaredMethods().each { CtMethod outerMethod ->
+                        if (outerMethod.name == "setContentView"){
+                            outerMethod.instrument(new ExprEditor(){
+                                @Override
+                                void edit(MethodCall call) throws CannotCompileException {
+                                    if (call.getMethod().name == "setContentView" && call.getMethod().signature == "(Landroid/view/View;)V"){
+                                        if (call.getMethod().getReturnType().getName() == 'void') {
+                                            call.replace('{$1 = com.bilibili.engine_center.startup.AutoSpeed.getInstance().createPageView(this,$1); $proceed($$);}')
+                                        }
+                                    }else if(call.getMethod().name == "setContentView" && call.getMethod().signature == "(I)V"){
+                                        if (call.getMethod().getReturnType().getName() == 'void') {
+                                            call.replace('{ android.view.View view=android.view.LayoutInflater.from(this).inflate($1, null);$1 = com.bilibili.engine_center.startup.AutoSpeed.getInstance().createPageView(this,view); $proceed($$);}')
+                                        }
+                                    }
+                                }
+                            })
+                        }
                     }
                 }
 
