@@ -3,10 +3,7 @@ package com.bilibili.volador_sniffer.internal.javaassit.Injector
 import com.android.build.api.transform.Context
 import com.android.build.api.transform.TransformOutputProvider
 import com.bilibili.volador_sniffer.internal.javaassit.Const
-import com.bilibili.volador_sniffer.internal.util.Logger
-import javassist.ClassPool
-import javassist.CtClass
-import javassist.CtMethod
+import javassist.*
 
 class ApplicationInjector extends BaseInjector{
 
@@ -19,14 +16,19 @@ class ApplicationInjector extends BaseInjector{
             ctCls = pool.getCtClass(dir)
             def originSuperCls = ctCls.superclass
             if (originSuperCls != null && (originSuperCls.name in hookApplication)){
-                Logger.info("||-->处理的文件为: ${dir}")
                 if (ctCls.isFrozen()){
                     ctCls.defrost()
                 }
 
+                CtField ctField = CtField.make("private long coldStartTime;", ctCls)
+                ctCls.addField(ctField)
+
+                CtConstructor[] constructors = ctCls.getConstructors()
+                CtConstructor ctConstructor = constructors[0]
+                ctConstructor.insertAfter("${ctField.name}=android.os.SystemClock.elapsedRealtime();")
+
                 CtMethod ctMethod =  ctCls.getDeclaredMethod("onCreate")
-                long time = 1L
-                ctMethod.insertBefore("${Const.AUTO_SPEED_CLASSNAME}.getInstance().init(this,${time});")
+                ctMethod.insertBefore("${Const.AUTO_SPEED_CLASSNAME}.getInstance().init(this,coldStartTime);")
 
                 return ctCls
             }

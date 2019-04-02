@@ -50,12 +50,10 @@ public class StartupUtil {
         inputs.each { TransformInput input ->
             input.directoryInputs.each { DirectoryInput directoryInput ->
                 def dir = directoryInput.file.absolutePath
-                Logger.info("遍历目录${dir.toString()}")
                 classPath << dir
             }
             input.jarInputs.each { JarInput jarInput ->
                 File jarFile = jarInput.file
-                Logger.info("遍历jar目录${jarFile.absolutePath.toString()}")
                 classPath << jarFile.absolutePath
             }
         }
@@ -131,7 +129,6 @@ public class StartupUtil {
         JarFile jar = new JarFile(jarFile)
         def hexName = DigestUtils.md5Hex(jarFile.absolutePath).substring(0, 8)
         def outputJar = new File(context.temporaryDir, hexName + jarFile.name)
-        Logger.info("||-->jar包中的文件: ${outputJar.absolutePath}")
         JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(outputJar))
         Enumeration<JarEntry> jarEntries = jar.entries()
         while (jarEntries.hasMoreElements()) {
@@ -145,10 +142,8 @@ public class StartupUtil {
 
             CtClass ctCls = null
             if (entryName.endsWith(SdkConstants.DOT_CLASS)) {
-                Logger.info("||-->jar包中的文件: ${entryName}")
                 String className = entryName.replace("/", ".").replace(".class", "")
                 try {
-                    Logger.info("||-->jar包中要处理的文件: ${className}")
                     ctCls= injector.injectJar(pool, className, outputProvider, context)
                 } catch (Exception e) {
                     //ignore.
