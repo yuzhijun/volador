@@ -83,7 +83,7 @@ public class AutoSpeed {
         }
     }
 
-    public View createPageView(Context context, View child){
+    public View createPageView(Object context, View child){
         Integer pageObjKey = BaseUtility.getPageObjKey(context);
         return AutoSpeedFrameLayout.wrap(pageObjKey, child);
     }

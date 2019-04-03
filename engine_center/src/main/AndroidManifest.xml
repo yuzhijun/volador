@@ -1,2 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.bilibili.engine_center"/>
+          package="com.bilibili.engine_center">
+
+    <application>
+    </application>
+
+</manifest>

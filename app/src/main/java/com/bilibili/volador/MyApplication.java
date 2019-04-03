@@ -3,9 +3,9 @@ package com.bilibili.volador;
 import android.app.Application;
 
 public class MyApplication extends Application {
-
-    MyApplication(){
+    public MyApplication(){
     }
+
 
     @Override
     public void onCreate() {

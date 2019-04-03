@@ -1,6 +1,5 @@
 <resources>
-    <string name="app_name">engine_center</string>
-
+    <string name="app_name">engine</string>
     <item name="auto_track_tag_view_value" type="id" />
     <item name="auto_track_tag_view_id" type="id" />
     <item name="auto_track_tag_view_ignored" type="id" />
