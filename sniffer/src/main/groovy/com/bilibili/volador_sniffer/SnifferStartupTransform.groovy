@@ -11,16 +11,17 @@ import com.bilibili.volador_sniffer.internal.util.Logger
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.Project
 
-class SnifferTransform extends Transform{
+class SnifferStartupTransform extends Transform{
 
-    SnifferProcedure snifferProcedure
-    SnifferTransform (Project project){
-        snifferProcedure = new SnifferProcedure(project)
+    SnifferStartupProcedure snifferProcedure
+
+    SnifferStartupTransform(Project project){
+        snifferProcedure = new SnifferStartupProcedure(project)
     }
 
     @Override
     String getName() {
-        return "sniffer"
+        return "sniffer_startup"
     }
     @Override
     Set<QualifiedContent.ContentType> getInputTypes() {
@@ -34,7 +35,7 @@ class SnifferTransform extends Transform{
     @Override
     boolean isIncremental() {
         //是否支持增量编译
-        return true
+        return false
     }
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
@@ -42,9 +43,9 @@ class SnifferTransform extends Transform{
         Project project = GlobalConfig.project
 
         if(transformInvocation.isIncremental() && isIncremental()){
-            snifferProcedure.with(new AutoSnifferEventUpdateProcedure(project, transformInvocation))
+            //TODO
         }else {
-            snifferProcedure.with(new AutoSnifferEventProcedure(project, transformInvocation))
+            snifferProcedure.with(new StartupTimeConsumeProcedure(project, transformInvocation))
         }
 
         snifferProcedure.with(new SnifferOnFinishedProcedure(project, transformInvocation))

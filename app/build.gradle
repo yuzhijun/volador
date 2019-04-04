@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'volador.sniffer'
+apply plugin: 'volador.startup.sniffer'
 
 sniffer {
     // 是否打印日志,可选,默认false
