@@ -10,6 +10,7 @@ import javassist.CtMethod
 
 class FragmentInjector extends BaseInjector{
     def private static hookFragment = ['android.support.v4.app.Fragment']
+
     @Override
     CtClass injectClass(ClassPool pool, String dir, TransformOutputProvider outputProvider, Context context) {
         def ctCls
@@ -35,6 +36,7 @@ class FragmentInjector extends BaseInjector{
                         "return var4;}")
                 return ctCls
             }
+
         }catch (Exception t) {
             t.printStackTrace()
         } finally {

@@ -169,7 +169,8 @@ public class AutoSpeed {
         if (hasApiConfig()){
             for (ConfigModel configModel : mConfigModels){
                 for (String url : configModel.getApi()){
-                    if (url.equals(relUrl)){
+                    relUrl = BaseUtility.getRelativeUrl(relUrl);
+                    if (url.equalsIgnoreCase(relUrl)){
                         return configModel;
                     }
                 }

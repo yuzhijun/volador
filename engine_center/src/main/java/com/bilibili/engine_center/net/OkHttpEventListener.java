@@ -127,7 +127,9 @@ public class OkHttpEventListener extends EventListener {
     @Override
     public void callEnd(Call call) {
         super.callEnd(call);
-        AutoSpeed.getInstance().onApiLoadEnd(call.request().url().toString());
+        if (call.request().url() != null){
+            AutoSpeed.getInstance().onApiLoadEnd(call.request().url().toString());
+        }
     }
 
     @Override

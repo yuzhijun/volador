@@ -1,13 +1,13 @@
 package com.bilibili.engine_center.bean;
 
 import android.os.SystemClock;
-import android.util.ArrayMap;
+import android.util.SparseIntArray;
 
 import com.bilibili.engine_center.startup.AutoSpeed;
 import com.bilibili.engine_center.util.BaseUtility;
 
 public class PageObject {
-    private ArrayMap<Integer, RequestStatus> apiStatusMap = new ArrayMap<>();//url->status
+    private SparseIntArray apiStatusMap = new SparseIntArray();//url->status
     private long pageCreateTime;//页面创建时间
     private long apiLoadStartTime;//请求开始时间
     private long apiLoadEndTime;//请求结束时间
@@ -18,11 +18,9 @@ public class PageObject {
     private ConfigModel configModel;
     private long defaultReportKey;
 
-    enum RequestStatus{
-        NONE,
-        LOADING,
-        LOADED
-    }
+    private static final Integer NONE = 0;
+    private static final Integer LOADING = 1;
+    private static final Integer LOADED = 2;
 
     public PageObject(long pageObjKey, ConfigModel configModel, long defaultReportKey, AutoSpeed.PageCallBack callBack) {
         this.pageObjKey = pageObjKey;
@@ -63,12 +61,14 @@ public class PageObject {
     //请求开始的时间记录
     public boolean onApiLoadStart(String url){
         String relUrl = BaseUtility.getRelativeUrl(url);
-        if (!AutoSpeed.getInstance().hasApiConfig() || !AutoSpeed.getInstance().hasUrl(relUrl) || apiStatusMap.get(relUrl.hashCode()) != RequestStatus.NONE) {
+        if (!AutoSpeed.getInstance().hasApiConfig()
+                || !AutoSpeed.getInstance().hasUrl(relUrl)
+                || apiStatusMap.get(relUrl.hashCode()) != NONE) {
             return false;
         }
 
         //改变Url的状态为执行中
-        apiStatusMap.put(relUrl.hashCode(), RequestStatus.LOADING);
+        apiStatusMap.put(relUrl.hashCode(), LOADING);
         //第一个请求开始时记录起始点
         if (apiLoadStartTime <= 0) {
             apiLoadStartTime = SystemClock.elapsedRealtime();
@@ -80,11 +80,13 @@ public class PageObject {
     //请求结束的时间记录
     public boolean onApiLoadEnd(String url){
         String relUrl = BaseUtility.getRelativeUrl(url);
-        if (!AutoSpeed.getInstance().hasApiConfig() || !AutoSpeed.getInstance().hasUrl(relUrl) || apiStatusMap.get(relUrl.hashCode()) != RequestStatus.LOADING) {
+        if (!AutoSpeed.getInstance().hasApiConfig()
+                || !AutoSpeed.getInstance().hasUrl(relUrl)
+                || apiStatusMap.get(relUrl.hashCode()) != LOADING) {
             return false;
         }
         //改变Url的状态为执行结束
-        apiStatusMap.put(relUrl.hashCode(), RequestStatus.LOADED);
+        apiStatusMap.put(relUrl.hashCode(), LOADED);
         //全部请求结束后记录时间
         if (apiLoadEndTime <= 0 && allApiLoaded()) {
             apiLoadEndTime = SystemClock.elapsedRealtime();
@@ -96,7 +98,7 @@ public class PageObject {
         if (!AutoSpeed.getInstance().hasApiConfig()) return true;
         int size = apiStatusMap.size();
         for (int i = 0; i < size; ++i) {
-            if (apiStatusMap.valueAt(i) != RequestStatus.LOADED) {
+            if (apiStatusMap.valueAt(i) != LOADED) {
                 return false;
             }
         }
@@ -125,5 +127,8 @@ public class PageObject {
 
     private void reportIfNeed(){
         //TODO
+        long apiLoadTime = getApiLoadTime();
+        long pageStartupTime = getPageStartupTime();
+
     }
 }

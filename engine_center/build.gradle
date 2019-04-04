@@ -29,8 +29,7 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
     //网络retrofit相关
-    implementation 'com.squareup.retrofit2:retrofit:2.4.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:3.6.0'
-    implementation 'org.ligboy.retrofit2:converter-fastjson-android:2.1.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    api 'com.squareup.retrofit2:retrofit:2.4.0'
+    api 'com.squareup.okhttp3:logging-interceptor:3.6.0'
+    api 'org.ligboy.retrofit2:converter-fastjson-android:2.1.0'
 }
