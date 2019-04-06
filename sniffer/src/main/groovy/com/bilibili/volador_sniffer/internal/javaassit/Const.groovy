@@ -16,4 +16,6 @@ package com.bilibili.volador_sniffer.internal.javaassit
 
 class Const {
    public static final String AUTO_SPEED_CLASSNAME = "com.bilibili.engine_center.startup.AutoSpeed"
+
+   public static final String AUTO_SPEED_LAYZY_LOAD_LISTENER = "com.bilibili.engine_center.startup.AutoSpeedLazyLoadListener"
 }

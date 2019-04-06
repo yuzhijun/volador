@@ -83,6 +83,15 @@ public class AutoSpeed {
         }
     }
 
+    public void onPageViewCreate(Object page){
+        Integer pageObjKey = BaseUtility.getPageObjKey(page);
+        PageObject pageObject = activePages.get(pageObjKey);
+        ConfigModel configModel = getConfigModel(page);//获取该页面的配置
+        if (pageObject != null && configModel != null){
+            pageObject.onPageViewCreate();
+        }
+    }
+
     public View createPageView(Object context, View child){
         Integer pageObjKey = BaseUtility.getPageObjKey(context);
         return AutoSpeedFrameLayout.wrap(pageObjKey, child);
@@ -92,6 +101,24 @@ public class AutoSpeed {
         PageObject pageObject = activePages.get(pageObjectKey);
         if (pageObject != null) {
             pageObject.onPageDrawEnd();
+        }
+    }
+
+    public void onPageSelect(Object page){
+        Integer pageObjKey = BaseUtility.getPageObjKey(page);
+        PageObject pageObject = activePages.get(pageObjKey);
+        ConfigModel configModel = getConfigModel(page);//获取该页面的配置
+        if (pageObject != null && configModel != null){
+            pageObject.onPageSelect();
+        }
+    }
+
+    public void onPageScrolled(Object page){
+        Integer pageObjKey = BaseUtility.getPageObjKey(page);
+        PageObject pageObject = activePages.get(pageObjKey);
+        ConfigModel configModel = getConfigModel(page);//获取该页面的配置
+        if (pageObject != null && configModel != null){
+            pageObject.onPageScrolled();
         }
     }
 

@@ -15,6 +15,9 @@ public class PageObject {
     private long initialDrawEndTime;//初次渲染结束时间
     private long pageObjKey;//页面key
     private AutoSpeed.PageCallBack callBack;//页面首次绘制完成回调
+    private long selectedTime;//fragment切换的时间
+    private long viewCreatedTime;//fragment onViewCreated的时间
+    private long scrollToTime;//viewpager开始滚动时间
     private ConfigModel configModel;
     private long defaultReportKey;
 
@@ -38,6 +41,24 @@ public class PageObject {
             return;
         }
         pageCreateTime = SystemClock.elapsedRealtime();
+    }
+
+    public void onPageViewCreate(){
+        if (viewCreatedTime > 0){
+            return;
+        }
+        viewCreatedTime = SystemClock.elapsedRealtime();
+    }
+
+    public void onPageSelect(){
+        if (selectedTime > 0){
+            return;
+        }
+        selectedTime = SystemClock.elapsedRealtime();
+    }
+
+    public void onPageScrolled(){
+
     }
 
     public void onPageDrawEnd(){
@@ -115,14 +136,43 @@ public class PageObject {
 
     //页面启动时间
     long getPageStartupTime() {
-        if (!AutoSpeed.getInstance().hasApiConfig() || pageCreateTime <= 0 || finalDrawEndTime <= 0) {
+        if (pageCreateTime <= 0) {
             return -1;
         }
-        return finalDrawEndTime - pageCreateTime;
+
+        if (finalDrawEndTime > 0) {//有二次渲染时间
+            long totalTime = finalDrawEndTime - pageCreateTime;
+            //如果有等待时间，则减掉这段多余的时间
+            if (selectedTime > 0 && selectedTime > viewCreatedTime && selectedTime < finalDrawEndTime) {
+                totalTime -= (selectedTime - viewCreatedTime);
+            }
+            return totalTime;
+        } else {//以初次渲染时间为整体时间
+            return getInitialDrawEndTime();
+        }
+    }
+
+    private long getFinalDrawTime() {
+        if (finalDrawEndTime <= 0 || apiLoadEndTime <= 0) {
+            return -1;
+        }
+        //延迟二次渲染，需要减去等待时间(apiLoadEnd->scrollToTime)
+        if (scrollToTime > 0 && scrollToTime > apiLoadEndTime && scrollToTime <= finalDrawEndTime) {
+            return finalDrawEndTime - apiLoadEndTime - (scrollToTime - apiLoadEndTime);
+        } else {//正常二次渲染
+            return finalDrawEndTime - apiLoadEndTime;
+        }
     }
 
     public long getInitialDrawEndTime() {
-        return initialDrawEndTime;
+        if (pageCreateTime <= 0 || initialDrawEndTime <= 0) {
+            return -1;
+        }
+        if (scrollToTime > 0 && scrollToTime > viewCreatedTime && scrollToTime <= initialDrawEndTime) {//延迟初次渲染，需要减去等待的时间(viewCreated->changeToPage)
+            return initialDrawEndTime - pageCreateTime - (scrollToTime - viewCreatedTime);
+        } else {//正常初次渲染
+            return initialDrawEndTime - pageCreateTime;
+        }
     }
 
     private void reportIfNeed(){

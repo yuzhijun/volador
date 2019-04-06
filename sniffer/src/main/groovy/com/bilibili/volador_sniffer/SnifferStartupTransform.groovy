@@ -14,8 +14,10 @@ import org.gradle.api.Project
 class SnifferStartupTransform extends Transform{
 
     SnifferStartupProcedure snifferProcedure
+    Project project
 
     SnifferStartupTransform(Project project){
+        this.project = project
         snifferProcedure = new SnifferStartupProcedure(project)
     }
 
@@ -40,15 +42,13 @@ class SnifferStartupTransform extends Transform{
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
         Logger.info("||-->开始插件处理")
-        Project project = GlobalConfig.project
-
         if(transformInvocation.isIncremental() && isIncremental()){
             //TODO
         }else {
-            snifferProcedure.with(new StartupTimeConsumeProcedure(project, transformInvocation))
+            snifferProcedure.with(new StartupTimeConsumeProcedure(this.project, transformInvocation))
         }
 
-        snifferProcedure.with(new SnifferOnFinishedProcedure(project, transformInvocation))
+        snifferProcedure.with(new SnifferOnFinishedProcedure(this.project, transformInvocation))
 
         snifferProcedure.doWorkContinuously()
     }
