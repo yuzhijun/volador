@@ -58,7 +58,10 @@ public class PageObject {
     }
 
     public void onPageScrolled(){
-
+        if (scrollToTime > 0){
+            return;
+        }
+        scrollToTime = SystemClock.elapsedRealtime();
     }
 
     public void onPageDrawEnd(){
@@ -127,7 +130,7 @@ public class PageObject {
     }
 
     //计算网络请求时间
-    long getApiLoadTime() {
+    public long getApiLoadTime() {
         if (!AutoSpeed.getInstance().hasApiConfig() || apiLoadEndTime <= 0 || apiLoadStartTime <= 0) {
             return -1;
         }
@@ -135,7 +138,7 @@ public class PageObject {
     }
 
     //页面启动时间
-    long getPageStartupTime() {
+    public long getPageStartupTime() {
         if (pageCreateTime <= 0) {
             return -1;
         }
@@ -152,7 +155,7 @@ public class PageObject {
         }
     }
 
-    private long getFinalDrawTime() {
+    public long getFinalDrawTime() {
         if (finalDrawEndTime <= 0 || apiLoadEndTime <= 0) {
             return -1;
         }
@@ -175,10 +178,15 @@ public class PageObject {
         }
     }
 
-    private void reportIfNeed(){
-        //TODO
-        long apiLoadTime = getApiLoadTime();
-        long pageStartupTime = getPageStartupTime();
+    public long getPageObjKey(){
+        return pageObjKey;
+    }
 
+    public long getDefaultReportKey(){
+        return defaultReportKey;
+    }
+
+    private void reportIfNeed(){
+        AutoSpeed.getInstance().reportPageObject(this);
     }
 }

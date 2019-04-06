@@ -2,8 +2,11 @@ package com.bilibili.engine_center.startup;
 
 import android.content.Context;
 import android.util.ArrayMap;
+import android.util.SparseArray;
 import android.view.View;
 
+import com.bilibili.engine_center.GeneratorSubject;
+import com.bilibili.engine_center.bean.AutoSpeedBean;
 import com.bilibili.engine_center.bean.ConfigModel;
 import com.bilibili.engine_center.bean.PageObject;
 import com.bilibili.engine_center.util.BaseUtility;
@@ -14,11 +17,12 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 import java.util.List;
 
-public class AutoSpeed {
+public class AutoSpeed extends GeneratorSubject<AutoSpeedBean> {
 
     private static AutoSpeed mInstance;
     private List<ConfigModel> mConfigModels; //startup配置
     private ArrayMap<Integer, PageObject> activePages = new ArrayMap<>();//活跃的页面
+    private SparseArray<PageObject> reportPages = new SparseArray<>();//测速完成汇报的页面
     private long coldStartTime;//冷启动开始时间
     private long coldStartTotalTime;//冷启动花费所有时间
     private Context application;
@@ -204,5 +208,21 @@ public class AutoSpeed {
             }
         }
         return null;
+    }
+
+    public void reportPageObject(PageObject pageObject){
+        Integer pageObjKey = BaseUtility.getPageObjKey(pageObject);
+        if (reportPages != null){
+            reportPages.put(pageObjKey, pageObject);
+        }
+
+        AutoSpeedBean autoSpeedBean = new AutoSpeedBean();
+        autoSpeedBean.setDefaultReportKey(pageObject.getDefaultReportKey());
+        autoSpeedBean.setPageName(pageObject.getConfigModel().getPageName());
+        autoSpeedBean.setApiLoadTime(pageObject.getApiLoadTime());
+        autoSpeedBean.setPageStartupTime(pageObject.getPageStartupTime());
+        autoSpeedBean.setFinalDrawTime(pageObject.getFinalDrawTime());
+
+        this.generate(autoSpeedBean);
     }
 }

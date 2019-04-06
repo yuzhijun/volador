@@ -1,1 +1,1 @@
-include ':app', ':sniffer', ':engine_center'
+include ':app', ':sniffer', ':engine_center', ':engine_consumer'

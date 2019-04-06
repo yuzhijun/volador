@@ -30,8 +30,7 @@ public class BaseUtility {
     }
 
     public static Integer getDefaultReportKey(Object object){
-        //TODO
-        return 0;
+        return object.hashCode();
     }
 
     public static String getRelativeUrl(String url){
