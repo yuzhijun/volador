@@ -130,6 +130,7 @@ bool LogBufferHeader::getIsCompress() {
 }
 
 size_t LogBufferHeader::calculateHeaderLen(size_t log_path_len) {
+    //magic + log_len + log_path_len + log_path + isCompress
     return sizeof(char) + sizeof(size_t) + sizeof(size_t) + log_path_len + sizeof(char);
 }
 

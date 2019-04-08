@@ -10,7 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 
-import com.bilibili.engine_center.net.RetrofitUtils;
+import com.bilibili.engine_center.net.ServiceGenerator;
 
 import org.json.JSONObject;
 
@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getNews() {
-        RetrofitUtils.getApiService().getNBANews("banner", mStringIds)
+        ServiceGenerator.createService(APIService.class).getNBANews("banner", mStringIds)
                 .enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {

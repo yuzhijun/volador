@@ -5,6 +5,8 @@ package com.bilibili.engine_center.util;
  */
 
 public class Const {
+    public static final int AGE_3SEC = 3000;
+    public static final int TIMEOUT_DEFAULT = AGE_3SEC;
     /**
      * configuration file name
      * */
