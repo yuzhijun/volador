@@ -11,7 +11,9 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/engine_center" />
             <option value="$PROJECT_DIR$/engine_consumer" />
+            <option value="$PROJECT_DIR$/engine_static" />
             <option value="$PROJECT_DIR$/sniffer" />
+            <option value="$PROJECT_DIR$/thirdparty" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
